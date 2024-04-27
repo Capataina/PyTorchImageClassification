@@ -41,6 +41,6 @@ class FlowerClassifier(nn.Module):
     def forward(self, x):
         x = x.view(x.size(0), -1)  # Reshape the input tensor to a 2D tensor, automatically calculate channels.
         x = self.fc1(x)  # Pass through the first calculation/hidden layer.
-        x = self.relu(x)  # Apply ReLU activation
-        x = self.fc2(x)  # Pass through the second fully connected layer
+        x = self.relu(x)  # Apply rectified linear unit activation.
+        x = self.fc2(x)  # Pass through the second calculation/hidden layer.
         return x
