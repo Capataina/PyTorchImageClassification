@@ -26,3 +26,21 @@ train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=32, shuffle
 val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=32, shuffle=False)
 test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=32, shuffle=False)
 
+
+# Define the neural network architecture
+class FlowerClassifier(nn.Module):
+    def __init__(self, num_classes):
+        super(FlowerClassifier, self).__init__()
+        self.fc1 = nn.Linear(256 * 256 * 3, 512)  # Hidden layer 1 with 256*256*3 inputs.
+        # We have that many inputs as our images are 256x256 with RGB color scheme.
+        # 512 nodes in the hidden layer, the number is arbitrary, not calculated.
+        self.relu = nn.ReLU()  # ReLU activation function. Allows for more complex non-linear hidden layer functions.
+        self.fc2 = nn.Linear(512, num_classes)  # 512 input nodes, the same as the first hidden layer.
+        # The outputs are the different types of flowers.
+
+    def forward(self, x):
+        x = x.view(x.size(0), -1)  # Reshape the input tensor to a 2D tensor, automatically calculate channels.
+        x = self.fc1(x)  # Pass through the first calculation/hidden layer.
+        x = self.relu(x)  # Apply ReLU activation
+        x = self.fc2(x)  # Pass through the second fully connected layer
+        return x
