@@ -66,7 +66,7 @@ optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 
 
 # Training loop.
-for epoch in range(10):
+for epoch in range(25):
     for images, labels in train_loader:
         optimizer.zero_grad()  # Reset the gradients. This allows for no bias at the start.
         outputs = model(images)  # Pass the images to our model.
@@ -81,4 +81,17 @@ for epoch in range(10):
 
 
 # Save the trained model
-torch.save(model.state_dict(), 'flower_classifier.pt')
+# torch.save(model.state_dict(), 'flower_classifier.pt')
+
+# Evaluation on the test set
+model.eval()  # Set the model to evaluation mode
+accuracy = 0.0
+with torch.no_grad():  # Disable gradient computation
+    for images, labels in test_loader:
+        outputs = model(images)  # Forward pass
+        _, predicted = torch.max(outputs.data, 1)  # Get the predicted classes
+        accuracy += (predicted == labels).sum().item()  # Calculate the accuracy
+
+accuracy /= len(test_dataset)
+print(f'Test Accuracy: {accuracy:.2f}')
+
