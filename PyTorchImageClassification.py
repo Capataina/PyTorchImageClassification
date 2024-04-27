@@ -44,3 +44,21 @@ class FlowerClassifier(nn.Module):
         x = self.relu(x)  # Apply rectified linear unit activation.
         x = self.fc2(x)  # Pass through the second calculation/hidden layer.
         return x
+
+
+# Initialize the model, loss function, and optimizer.
+# The number of classes is 102, as there are 102 different types of flowers, hence the name Flowers-102.
+model = FlowerClassifier(num_classes=102)
+
+# We will be using Cross Entropy Loss. There are many reasons for this, for example cross entropy loss encourages the
+# model to assign high probabilities to the correct class and low probabilities to the incorrect classes. It is also
+# very common in multi-class classification neural networks. It focuses on the overall correctness of the model
+# rather than focusing on small details which is important for a dataset this size and most importantly,
+# it works very well with the optimising algorithm we will be using, stochastic gradient descent.
+criterion = nn.CrossEntropyLoss()
+
+# The optimiser we will be using is stochastic gradient descent. One of the main reasons why I used stochastic
+# gradient descent is because we've done gradient descent in our practical. Also, SGD processes small batches at a time,
+# making it computationally efficient. It reaches conclusions relatively faster than other optimising algorithms and
+# the randomness allows for easier generation of more complex algorithms rather than a linear convergence.
+optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
