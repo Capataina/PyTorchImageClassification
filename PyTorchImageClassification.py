@@ -1,6 +1,7 @@
 import torch  # Needed for the neural networks
 import scipy  # Needed to process the downloads from torchvision
 import torch.nn as nn  # Needed for the neural networks
+from torch import save, load # Needed to save/load the pt file.
 import torch.optim as optim  # Needed to optimise the neural network
 from torchvision import datasets, transforms  # Needed to download and transform/process the images
 
@@ -79,4 +80,5 @@ for epoch in range(10):
     # TODO - Add a validation loop if needed!
 
 
-
+# Save the trained model
+torch.save(model.state_dict(), 'flower_classifier.pt')
