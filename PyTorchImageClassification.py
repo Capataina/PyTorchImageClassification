@@ -62,3 +62,18 @@ criterion = nn.CrossEntropyLoss()
 # making it computationally efficient. It reaches conclusions relatively faster than other optimising algorithms and
 # the randomness allows for easier generation of more complex algorithms rather than a linear convergence.
 optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+
+
+# Training loop.
+for epoch in range(3):
+    for images, labels in train_loader:
+        optimizer.zero_grad()  # Reset the gradients. This allows for no bias at the start.
+        outputs = model(images)  # Pass the images to our model.
+        loss = criterion(outputs, labels)  # Calculate the loss between the predictions and the true labels.
+        loss.backward()  # Apply backpropagation to compute the gradient of the loss.
+        optimizer.step()  # We update the model's weight based on the gradient from our loss algorithm.
+
+    # TODO - Add a validation loop if needed!
+
+
+
