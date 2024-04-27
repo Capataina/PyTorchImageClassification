@@ -65,13 +65,16 @@ optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 
 
 # Training loop.
-for epoch in range(3):
+for epoch in range(10):
     for images, labels in train_loader:
         optimizer.zero_grad()  # Reset the gradients. This allows for no bias at the start.
         outputs = model(images)  # Pass the images to our model.
         loss = criterion(outputs, labels)  # Calculate the loss between the predictions and the true labels.
         loss.backward()  # Apply backpropagation to compute the gradient of the loss.
         optimizer.step()  # We update the model's weight based on the gradient from our loss algorithm.
+
+    # For debug
+    print('Epoch {}, Loss: {}'.format(epoch, loss.item()))
 
     # TODO - Add a validation loop if needed!
 
