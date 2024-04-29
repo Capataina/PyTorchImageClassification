@@ -1,7 +1,7 @@
 import torch  # Needed for the neural networks
 import scipy  # Needed to process the downloads from torchvision
 import torch.nn as nn  # Needed for the neural networks
-from torch import save, load # Needed to save/load the pt file.
+from torch import save, load  # Needed to save/load the pt file.
 import torch.optim as optim  # Needed to optimise the neural network
 from torchvision import datasets, transforms  # Needed to download and transform/process the images
 
@@ -35,15 +35,21 @@ class FlowerClassifier(nn.Module):
         self.fc1 = nn.Linear(256 * 256 * 3, 512)  # Hidden layer 1 with 256*256*3 inputs.
         # We have that many inputs as our images are 256x256 with RGB color scheme.
         # 512 nodes in the hidden layer, the number is arbitrary, not calculated.
-        self.relu = nn.ReLU()  # ReLU activation function. Allows for more complex non-linear hidden layer functions.
-        self.fc2 = nn.Linear(512, num_classes)  # 512 input nodes, the same as the first hidden layer.
+        self.relu1 = nn.ReLU()  # ReLU activation function. Allows for more complex non-linear hidden layer functions.
+        self.fc2 = nn.Linear(512, 256)  # Quick change added for possible increased accuracy. Now there is 1 more
+        # fully connected layer.
+        self.relu2 = nn.ReLU()  # Another ReLU activation layer after the second hidden layer.
+        self.fc3 = nn.Linear(256, num_classes)
+        # 512 input nodes, the same as the first hidden layer.
         # The outputs are the different types of flowers.
 
     def forward(self, x):
         x = x.view(x.size(0), -1)  # Reshape the input tensor to a 2D tensor, automatically calculate channels.
         x = self.fc1(x)  # Pass through the first calculation/hidden layer.
-        x = self.relu(x)  # Apply rectified linear unit activation.
+        x = self.relu1(x)  # Apply rectified linear unit activation.
         x = self.fc2(x)  # Pass through the second calculation/hidden layer.
+        x = self.relu2(x)  # Added second ReLU layer to possibly increase accuracy
+        x = self.fc3(x)  # Last fully connected layer.
         return x
 
 
@@ -64,9 +70,8 @@ criterion = nn.CrossEntropyLoss()
 # the randomness allows for easier generation of more complex algorithms rather than a linear convergence.
 optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 
-
 # Training loop.
-for epoch in range(25):
+for epoch in range(20):
     for images, labels in train_loader:
         optimizer.zero_grad()  # Reset the gradients. This allows for no bias at the start.
         outputs = model(images)  # Pass the images to our model.
@@ -78,7 +83,6 @@ for epoch in range(25):
     print('Epoch {}, Loss: {}'.format(epoch, loss.item()))
 
     # TODO - Add a validation loop if needed!
-
 
 # Save the trained model
 # torch.save(model.state_dict(), 'flower_classifier.pt')
@@ -94,4 +98,3 @@ with torch.no_grad():  # Disable gradient computation
 
 accuracy /= len(test_dataset)
 print(f'Test Accuracy: {accuracy:.2f}')
-
