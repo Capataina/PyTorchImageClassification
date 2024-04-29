@@ -3,6 +3,7 @@ import scipy  # Needed to process the downloads from torchvision
 import torch.nn as nn  # Needed for the neural networks
 from torch import save, load  # Needed to save/load the pt file.
 import torch.optim as optim  # Needed to optimise the neural network
+from torch.optim.lr_scheduler import StepLR
 from torchvision import datasets, transforms  # Needed to download and transform/process the images
 
 # Define the data transformations, this way all the images have the same size.
@@ -61,16 +62,15 @@ test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=32, shuffle=F
 # relations of pixels with the nearby pixels rather than simply matching pixels to each other. This gives the neural
 # network a type of "spatial awareness" that allows it to recognise patterns.
 # Best run parameters:
-# Epochs: 50
+# Epochs: 8
 # Random Horizontal Flips
 # Random Rotations: 25
 # 256x256 Images
-# Test Accuracy: 0.21
-# Learning Rate: 0.0005
-# Final Loss: 0.9
-# Final Notes: The network kept going back and forth 1.3 and 0.6 loss,
-# but if we take the average of each 10 epochs, the loss was decreasing,
-# meaning the model needs more epochs to be better fitted, potentially.
+# Test Accuracy: 0.23
+# Learning Rate: 0.005
+# Step Size: 5
+# Gamma: 0.75
+# Final Loss: 2.75
 class FlowerClassifier(nn.Module):
     def __init__(self, num_classes):
         super(FlowerClassifier, self).__init__()
@@ -119,21 +119,34 @@ criterion = nn.CrossEntropyLoss()
 # gradient descent is because we've done gradient descent in our practical. Also, SGD processes small batches at a time,
 # making it computationally efficient. It reaches conclusions relatively faster than other optimising algorithms and
 # the randomness allows for easier generation of more complex algorithms rather than a linear convergence.
-optimizer = optim.SGD(model.parameters(), lr=0.0005, momentum=0.9)
+optimizer = optim.SGD(model.parameters(), lr=0.005, momentum=0.9)
+scheduler = StepLR(optimizer, step_size=5, gamma=0.75)  # Reduce LR every 5 epochs by a factor of 0.75
 
-# Training loop.
-for epoch in range(50):
+for epoch in range(25):
+    model.train()  # Ensure the model is in training mode
     for images, labels in train_loader:
-        optimizer.zero_grad()  # Reset the gradients. This allows for no bias at the start.
-        outputs = model(images)  # Pass the images to our model.
-        loss = criterion(outputs, labels)  # Calculate the loss between the predictions and the true labels.
-        loss.backward()  # Apply backpropagation to compute the gradient of the loss.
-        optimizer.step()  # We update the model's weight based on the gradient from our loss algorithm.
+        optimizer.zero_grad()
+        outputs = model(images)
+        loss = criterion(outputs, labels)
+        loss.backward()
+        optimizer.step()
 
-    # For debug
-    print('Epoch {}, Loss: {}'.format(epoch + 1, loss.item()))
+    scheduler.step()  # Adjust the learning rate
 
-    # TODO - Add a validation loop if needed!
+    # Validation loop
+    model.eval()  # Set the model to evaluation mode
+    val_loss = 0
+    val_accuracy = 0
+    with torch.no_grad():
+        for images, labels in val_loader:
+            outputs = model(images)
+            val_loss += criterion(outputs, labels).item()
+            _, predicted = torch.max(outputs.data, 1)
+            val_accuracy += (predicted == labels).sum().item()
+
+    val_loss /= len(val_loader.dataset)
+    val_accuracy /= len(val_loader.dataset)
+    print(f'Epoch {epoch + 1}, Training Loss: {loss.item():.5f}, Validation Loss: {val_loss:.5f}, Validation Accuracy: {val_accuracy:.2f}')
 
 # Save the trained model
 # torch.save(model.state_dict(), 'flower_classifier.pt')
