@@ -92,7 +92,14 @@ criterion = nn.CrossEntropyLoss()
 # gradient descent is because we've done gradient descent in our practical. Also, SGD processes small batches at a time,
 # making it computationally efficient. It reaches conclusions relatively faster than other optimising algorithms and
 # the randomness allows for easier generation of more complex algorithms rather than a linear convergence.
+
+# SGD
 optimizer = optim.SGD(model.parameters(), lr=0.005, momentum=0.9)
+
+# Adam
+# optimizer = optim.Adam(model.parameters(), lr=0.001)
+
+
 scheduler = StepLR(optimizer, step_size=5, gamma=0.75)  # Reduce LR every 5 epochs by a factor of 0.75
 
 for epoch in range(25):
