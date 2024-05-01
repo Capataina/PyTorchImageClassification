@@ -3,6 +3,7 @@ import scipy  # Needed to process the downloads from torchvision
 import torch.nn as nn  # Needed for the neural networks
 from torch import save, load  # Needed to save/load the pt file.
 import torch.optim as optim  # Needed to optimise the neural network
+from torch.optim.lr_scheduler import StepLR
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torchvision import datasets, transforms  # Needed to download and transform/process the images
 
@@ -34,47 +35,50 @@ test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=32, shuffle=F
 class FlowerClassifier(nn.Module):
     def __init__(self, num_classes):
         super(FlowerClassifier, self).__init__()
+        # Convolutional layers
         self.conv1 = nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1)
         self.relu1 = nn.ReLU()
         self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2)
+        self.dropout1 = nn.Dropout(0.2)  # Moderate dropout after pooling
 
         self.conv2 = nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1)
         self.relu2 = nn.ReLU()
         self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2)
+        self.dropout2 = nn.Dropout(0.3)  # Moderate dropout after pooling
 
-        self.conv3 = nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1)  # Added third convolutional layer
+        # Fully connected layers
+        self.fc1 = nn.Linear(32 * 64 * 64, 512)  # Adjusted for new flattening size after conv and pool layers
         self.relu3 = nn.ReLU()
-        self.pool3 = nn.MaxPool2d(kernel_size=2, stride=2)
+        self.dropout3 = nn.Dropout(0.4)  # Dropout before the next linear layer
 
-        self.dropout1 = nn.Dropout(0.3)  # Increased dropout rate
-
-        self.fc1 = nn.Linear(64 * 32 * 32, 256)  # Adjusted for new flattening size after additional layer
+        self.fc2 = nn.Linear(512, 256)
         self.relu4 = nn.ReLU()
-        self.dropout2 = nn.Dropout(0.3)  # Increased dropout rate
+        self.dropout4 = nn.Dropout(0.5)  # Dropout before the output layer
 
-        self.fc2 = nn.Linear(256, num_classes)
+        # Output layer
+        self.fc3 = nn.Linear(256, num_classes)
 
     def forward(self, x):
         x = self.conv1(x)
         x = self.relu1(x)
         x = self.pool1(x)
+        x = self.dropout1(x)
 
         x = self.conv2(x)
         x = self.relu2(x)
         x = self.pool2(x)
+        x = self.dropout2(x)
 
-        x = self.conv3(x)  # Pass through the new third convolutional layer
-        x = self.relu3(x)
-        x = self.pool3(x)
-
-        x = self.dropout1(x)  # Apply dropout
-
-        x = x.view(x.size(0), -1)
+        x = x.view(x.size(0), -1)  # Flatten the features into a single vector
         x = self.fc1(x)
-        x = self.relu4(x)
-        x = self.dropout2(x)  # Apply dropout
+        x = self.relu3(x)
+        x = self.dropout3(x)
 
         x = self.fc2(x)
+        x = self.relu4(x)
+        x = self.dropout4(x)
+
+        x = self.fc3(x)
         return x
 
 
