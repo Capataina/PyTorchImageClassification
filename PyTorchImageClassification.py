@@ -105,21 +105,24 @@ scheduler = StepLR(optimizer, step_size=5, gamma=0.75)  # Reduce LR every 5 epoc
 # ReduceLROnPlateau
 # scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=5)
 
-for epoch in range(25):
-    model.train()  # Ensure the model is in training mode
+best_val_loss = float('inf')
+counter = 0
+best_model_state = None
+
+for epoch in range(50):  # increase to 50 epochs
+    model.train()
+    train_loss = 0
     for images, labels in train_loader:
         optimizer.zero_grad()
         outputs = model(images)
         loss = criterion(outputs, labels)
         loss.backward()
         optimizer.step()
+        train_loss += loss.item()
 
-    scheduler.step()  # Adjust the learning rate
-
-    # Validation loop
-    model.eval()  # Set the model to evaluation mode
     val_loss = 0
     val_accuracy = 0
+    model.eval()
     with torch.no_grad():
         for images, labels in val_loader:
             outputs = model(images)
@@ -129,9 +132,19 @@ for epoch in range(25):
 
     val_loss /= len(val_loader.dataset)
     val_accuracy /= len(val_loader.dataset)
-    print(
-        f'Epoch {epoch + 1}, Training Loss: {loss.item():.5f}, Validation Loss: {val_loss:.5f}, Validation Accuracy: {val_accuracy:.2f}')
+    scheduler.step(val_loss)  # Scheduler steps based on validation loss
 
+    print(f'Epoch {epoch + 1}, Training Loss: {train_loss / len(train_loader.dataset):.5f}, Validation Loss: {val_loss:.5f}, Validation Accuracy: {val_accuracy:.2f}')
+
+    if val_loss < best_val_loss:
+        best_val_loss = val_loss
+        best_model_state = model.state_dict()  # Save the best model's state dictionary
+        counter = 0
+    else:
+        counter += 1
+        if counter >= 10:
+            print(f"Early stopping at epoch {epoch+1}")
+            break
 # Save the trained model
 # torch.save(model.state_dict(), 'flower_classifier.pt')
 
