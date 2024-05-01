@@ -3,7 +3,7 @@ import scipy  # Needed to process the downloads from torchvision
 import torch.nn as nn  # Needed for the neural networks
 from torch import save, load  # Needed to save/load the pt file.
 import torch.optim as optim  # Needed to optimise the neural network
-from torch.optim.lr_scheduler import StepLR
+from torch.optim.lr_scheduler import StepLR, ReduceLROnPlateau
 from torchvision import datasets, transforms  # Needed to download and transform/process the images
 
 # Define the data transformations, this way all the images have the same size.
@@ -99,8 +99,11 @@ optimizer = optim.SGD(model.parameters(), lr=0.005, momentum=0.9)
 # Adam
 # optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-
+# StepLR
 scheduler = StepLR(optimizer, step_size=5, gamma=0.75)  # Reduce LR every 5 epochs by a factor of 0.75
+
+# ReduceLROnPlateau
+# scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=5)
 
 for epoch in range(25):
     model.train()  # Ensure the model is in training mode
