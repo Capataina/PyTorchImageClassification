@@ -148,6 +148,8 @@ for epoch in range(50):  # increase to 50 epochs
 # Save the trained model
 # torch.save(model.state_dict(), 'flower_classifier.pt')
 
+model.load_state_dict(best_model_state)
+
 # Evaluation on the test set
 model.eval()  # Set the model to evaluation mode
 accuracy = 0.0
