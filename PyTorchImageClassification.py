@@ -31,33 +31,6 @@ val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=32, shuffle=Fal
 test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=32, shuffle=False)
 
 
-# Define the neural network architecture
-# Best loss was 0.04 and best accuracy was 0.2
-# Done with random horizontal flips and rotations over 50 epochs.
-# class FlowerClassifier(nn.Module):
-#    def __init__(self, num_classes):
-#        super(FlowerClassifier, self).__init__()
-#        self.fc1 = nn.Linear(256 * 256 * 3, 512)  # Hidden layer 1 with 256*256*3 inputs.
-#        # We have that many inputs as our images are 256x256 with RGB color scheme.
-#        # 512 nodes in the hidden layer, the number is arbitrary, not calculated.
-#        self.relu1 = nn.ReLU()  # ReLU activation function. Allows for more complex non-linear hidden layer functions.
-#        self.fc2 = nn.Linear(512, 256)  # Quick change added for possible increased accuracy. Now there is 1 more
-#        # fully connected layer.
-#        self.relu2 = nn.ReLU()  # Another ReLU activation layer after the second hidden layer.
-#        self.fc3 = nn.Linear(256, num_classes)
-#        # 512 input nodes, the same as the first hidden layer.
-#        # The outputs are the different types of flowers.
-#
-#    def forward(self, x):
-#        x = x.view(x.size(0), -1)  # Reshape the input tensor to a 2D tensor, automatically calculate channels.
-#        x = self.fc1(x)  # Pass through the first calculation/hidden layer.
-#        x = self.relu1(x)  # Apply rectified linear unit activation.
-#        x = self.fc2(x)  # Pass through the second calculation/hidden layer.
-#        x = self.relu2(x)  # Added second ReLU layer to possibly increase accuracy
-#        x = self.fc3(x)  # Last fully connected layer.
-#        return x
-
-
 # Convolutional neural network to better process images. CNN's are better at image processing as they also learn the
 # relations of pixels with the nearby pixels rather than simply matching pixels to each other. This gives the neural
 # network a type of "spatial awareness" that allows it to recognise patterns.
@@ -146,7 +119,8 @@ for epoch in range(25):
 
     val_loss /= len(val_loader.dataset)
     val_accuracy /= len(val_loader.dataset)
-    print(f'Epoch {epoch + 1}, Training Loss: {loss.item():.5f}, Validation Loss: {val_loss:.5f}, Validation Accuracy: {val_accuracy:.2f}')
+    print(
+        f'Epoch {epoch + 1}, Training Loss: {loss.item():.5f}, Validation Loss: {val_loss:.5f}, Validation Accuracy: {val_accuracy:.2f}')
 
 # Save the trained model
 # torch.save(model.state_dict(), 'flower_classifier.pt')
