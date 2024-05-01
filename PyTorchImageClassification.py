@@ -3,7 +3,7 @@ import scipy  # Needed to process the downloads from torchvision
 import torch.nn as nn  # Needed for the neural networks
 from torch import save, load  # Needed to save/load the pt file.
 import torch.optim as optim  # Needed to optimise the neural network
-from torch.optim.lr_scheduler import StepLR, ReduceLROnPlateau
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torchvision import datasets, transforms  # Needed to download and transform/process the images
 
 # Define the data transformations, this way all the images have the same size.
@@ -12,7 +12,7 @@ from torchvision import datasets, transforms  # Needed to download and transform
 transform = transforms.Compose([
     transforms.Resize((256, 256)),
     transforms.RandomHorizontalFlip(),
-    transforms.RandomRotation(25),
+    transforms.RandomRotation(15),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
@@ -31,19 +31,6 @@ val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=32, shuffle=Fal
 test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=32, shuffle=False)
 
 
-# Convolutional neural network to better process images. CNN's are better at image processing as they also learn the
-# relations of pixels with the nearby pixels rather than simply matching pixels to each other. This gives the neural
-# network a type of "spatial awareness" that allows it to recognise patterns.
-# Best run parameters:
-# Epochs: 8
-# Random Horizontal Flips
-# Random Rotations: 25
-# 256x256 Images
-# Test Accuracy: 0.23
-# Learning Rate: 0.005
-# Step Size: 5
-# Gamma: 0.75
-# Final Loss: 2.75
 class FlowerClassifier(nn.Module):
     def __init__(self, num_classes):
         super(FlowerClassifier, self).__init__()
@@ -55,10 +42,17 @@ class FlowerClassifier(nn.Module):
         self.relu2 = nn.ReLU()
         self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2)
 
-        self.fc1 = nn.Linear(32 * 64 * 64, 128)
+        self.conv3 = nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1)  # Added third convolutional layer
         self.relu3 = nn.ReLU()
+        self.pool3 = nn.MaxPool2d(kernel_size=2, stride=2)
 
-        self.fc2 = nn.Linear(128, num_classes)
+        self.dropout1 = nn.Dropout(0.3)  # Increased dropout rate
+
+        self.fc1 = nn.Linear(64 * 32 * 32, 256)  # Adjusted for new flattening size after additional layer
+        self.relu4 = nn.ReLU()
+        self.dropout2 = nn.Dropout(0.3)  # Increased dropout rate
+
+        self.fc2 = nn.Linear(256, num_classes)
 
     def forward(self, x):
         x = self.conv1(x)
@@ -69,9 +63,16 @@ class FlowerClassifier(nn.Module):
         x = self.relu2(x)
         x = self.pool2(x)
 
+        x = self.conv3(x)  # Pass through the new third convolutional layer
+        x = self.relu3(x)
+        x = self.pool3(x)
+
+        x = self.dropout1(x)  # Apply dropout
+
         x = x.view(x.size(0), -1)
         x = self.fc1(x)
-        x = self.relu3(x)
+        x = self.relu4(x)
+        x = self.dropout2(x)  # Apply dropout
 
         x = self.fc2(x)
         return x
@@ -93,17 +94,11 @@ criterion = nn.CrossEntropyLoss()
 # making it computationally efficient. It reaches conclusions relatively faster than other optimising algorithms and
 # the randomness allows for easier generation of more complex algorithms rather than a linear convergence.
 
-# SGD
-optimizer = optim.SGD(model.parameters(), lr=0.005, momentum=0.9)
-
 # Adam
-# optimizer = optim.Adam(model.parameters(), lr=0.001)
-
-# StepLR
-scheduler = StepLR(optimizer, step_size=5, gamma=0.75)  # Reduce LR every 5 epochs by a factor of 0.75
+optimizer = optim.Adam(model.parameters(), lr=0.001)
 
 # ReduceLROnPlateau
-# scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=5)
+scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=5)
 
 best_val_loss = float('inf')
 counter = 0
@@ -134,7 +129,8 @@ for epoch in range(50):  # increase to 50 epochs
     val_accuracy /= len(val_loader.dataset)
     scheduler.step(val_loss)  # Scheduler steps based on validation loss
 
-    print(f'Epoch {epoch + 1}, Training Loss: {train_loss / len(train_loader.dataset):.5f}, Validation Loss: {val_loss:.5f}, Validation Accuracy: {val_accuracy:.2f}')
+    print(
+        f'Epoch {epoch + 1}, Training Loss: {train_loss / len(train_loader.dataset):.5f}, Validation Loss: {val_loss:.5f}, Validation Accuracy: {val_accuracy:.2f}')
 
     if val_loss < best_val_loss:
         best_val_loss = val_loss
@@ -143,8 +139,9 @@ for epoch in range(50):  # increase to 50 epochs
     else:
         counter += 1
         if counter >= 10:
-            print(f"Early stopping at epoch {epoch+1}")
+            print(f"Early stopping at epoch {epoch + 1}")
             break
+
 # Save the trained model
 # torch.save(model.state_dict(), 'flower_classifier.pt')
 
