@@ -1,4 +1,4 @@
-""" Decreased smoothing factor to 0.1
+""" Decreased smoothing factor to 0.1 - best training run
 Epoch 1, Training Loss: 0.27981, Validation Loss: 0.25044, Validation Accuracy: 0.11
 Epoch 2, Training Loss: 0.24942, Validation Loss: 0.22025, Validation Accuracy: 0.14
 Epoch 3, Training Loss: 0.23140, Validation Loss: 0.20637, Validation Accuracy: 0.19
@@ -113,19 +113,17 @@ Early stopping at epoch 110
 Test Accuracy: 0.72
 """
 
-
 import torch  # Needed for the neural networks
 import scipy  # Needed to process the downloads from torchvision
 import torch.nn as nn  # Needed for the neural networks
 from torch import save, load  # Needed to save/load the pt file.
 import torch.optim as optim  # Needed to optimise the neural network
-from torch.optim.lr_scheduler import StepLR
-from torch.optim.lr_scheduler import ReduceLROnPlateau
+from torch.optim.lr_scheduler import ReduceLROnPlateau  # The scheduler used to change learning rate
 from torchvision import datasets, transforms  # Needed to download and transform/process the images
 
-# Define the data transformations, this way all the images have the same size.
-# This allows us to run the images through the same neural network.
-# Otherwise, the input layer would need to change.
+# Define the data transformations, this way all the images have the same size. Certain data augmentation techniques
+# like random horizontal flips, rotations and color jitters used to make the data more complex. This allows us to run
+# the images through the same neural network. Otherwise, the input layer would need to change.
 train_transform = transforms.Compose([
     transforms.RandomResizedCrop(256, scale=(0.75, 1.0)),
     transforms.RandomHorizontalFlip(),
@@ -150,80 +148,84 @@ test_dataset = datasets.Flowers102(root='./data', split='test', transform=test_t
 # Create data loaders. These allow you to load the data for the neural network. The batch size allows you to train
 # the model in batches rather than per image, allowing better and more complex learning. We shuffle the training set
 # so that in each epoch, the neural network is opposed to different orders of images, strengthening the hidden layers.
+# Num workers added to introduce parallel learning - can cause "harmless" warnings.
 train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=16, shuffle=True, num_workers=4)
 val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=16, shuffle=False, num_workers=4)
 test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=16, shuffle=False, num_workers=4)
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # We send everything to the gpu if it exists.
 
+
+# Convolutional neural networks outperform practically all other types of neural networks in image classification.
+# One of the main reasons for this is that convolutional neural networks don't only mix and match nodes but rather
+# are more prone to catching patterns.
 class FlowerClassifier(nn.Module):
     def __init__(self, num_classes):
         super(FlowerClassifier, self).__init__()
-        self.conv_block1 = nn.Sequential(
+        self.conv_block1 = nn.Sequential(  # First convolutional block.
             nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1),
-            nn.BatchNorm2d(32),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2)
+            nn.BatchNorm2d(32),  # Batch normalization filter applied to catch complex patterns.
+            nn.ReLU(),  # Rectified linear unit used to introduce nonlinearity.
+            nn.MaxPool2d(kernel_size=2, stride=2)  # Pooling used before moving onto the next block.
         )
-        self.conv_block2 = nn.Sequential(
+        self.conv_block2 = nn.Sequential(  # Second convolutional block.
             nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
             nn.BatchNorm2d(64),
             nn.ReLU(),
             nn.MaxPool2d(2, 2)
         )
-        self.conv_block3 = nn.Sequential(
+        self.conv_block3 = nn.Sequential(  # Third convolutional block.
             nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
             nn.BatchNorm2d(128),
             nn.ReLU(),
             nn.MaxPool2d(2, 2)
         )
-        self.conv_block4 = nn.Sequential(
+        self.conv_block4 = nn.Sequential(  # Fourth convolutional block.
             nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),
             nn.BatchNorm2d(256),
             nn.ReLU(),
             nn.MaxPool2d(2, 2)
         )
-        self.conv_block5 = nn.Sequential(
+        self.conv_block5 = nn.Sequential(  # Fifth convolutional block.
             nn.Conv2d(256, 512, kernel_size=3, stride=1, padding=1),
             nn.BatchNorm2d(512),
             nn.ReLU(),
             nn.MaxPool2d(2, 2)
         )
-        self.conv_block6 = nn.Sequential(
+        self.conv_block6 = nn.Sequential(  # Sixth convolutional block.
             nn.Conv2d(512, 512, kernel_size=3, stride=1, padding=1),
             nn.BatchNorm2d(512),
             nn.ReLU(),
             nn.MaxPool2d(2, 2)
         )
-        self.conv_block7 = nn.Sequential(  # New layer
+        self.conv_block7 = nn.Sequential(  # Seventh convolutional block.
             nn.Conv2d(512, 1024, kernel_size=3, stride=1, padding=1),
             nn.BatchNorm2d(1024),
             nn.ReLU(),
             nn.MaxPool2d(2, 2)
         )
-        self.global_avg_pool = nn.AdaptiveAvgPool2d((1, 1))
+        self.global_avg_pool = nn.AdaptiveAvgPool2d((1, 1))  # Adaptive pooling used to handle varying input sizes.
         self.fc = nn.Sequential(
-            nn.Linear(1024, 1024),
+            nn.Linear(1024, 1024),  # First linear fully connected layer
             nn.ReLU(),
-            nn.Dropout(0.1),
-            nn.Linear(1024, num_classes)
+            nn.Dropout(0.1),  # Dropout layer allows for the neural network to learn new patterns by forgetting a
+            # random number of weights. This helps to prevent overfitting and getting stuck during learning.
+            nn.Linear(1024, num_classes)  # Connect last layer to outputs.
         )
 
-    def forward(self, x):
+    def forward(self, x):  # Pass the values through each layer in the CNN.
         x = self.conv_block1(x)
         x = self.conv_block2(x)
         x = self.conv_block3(x)
         x = self.conv_block4(x)
         x = self.conv_block5(x)
         x = self.conv_block6(x)
-        x = self.conv_block7(x)  # Forward pass through the new layer
+        x = self.conv_block7(x)
         x = self.global_avg_pool(x)
         x = x.view(x.size(0), -1)
         x = self.fc(x)
         return x
 
-
-# Training setup remains unchanged
 
 # Initialize the model, loss function, and optimizer.
 # The number of classes is 102, as there are 102 different types of flowers, hence the name Flowers-102.
@@ -236,33 +238,33 @@ model = FlowerClassifier(num_classes=102).to(device)
 # it works very well with the optimising algorithm we will be using, stochastic gradient descent.
 criterion = nn.CrossEntropyLoss().to(device)
 
-# The optimiser we will be using is stochastic gradient descent. One of the main reasons why I used stochastic
-# gradient descent is because we've done gradient descent in our practical. Also, SGD processes small batches at a time,
-# making it computationally efficient. It reaches conclusions relatively faster than other optimising algorithms and
-# the randomness allows for easier generation of more complex algorithms rather than a linear convergence.
-
-# Adam
+# Adam optimiser used as it allows for node based learning adjustment.
+# It is considered industry standard for most applications.
 optimizer = optim.Adam(model.parameters(), lr=0.0001, weight_decay=0.0075)
 
-# ReduceLROnPlateau
+# ReduceLROnPlateau used to dynamically change the learning rate if model plateau's.
 scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.75, patience=5)
 
 best_val_loss = float('inf')
 counter = 0
 best_model_state = None
 
-def smooth_labels(labels, num_classes = 102, smoothing_factor=0.1, device='cuda'):
-    smooth_labels = torch.full(size=(labels.size(0), num_classes), fill_value=smoothing_factor / num_classes, device=device)
+
+# Introduced label smoothing to prevent overfitting and provide advanced regularization.
+def smooth_labels(labels, num_classes=102, smoothing_factor=0.1, device='cuda'):
+    smooth_labels = torch.full(size=(labels.size(0), num_classes), fill_value=smoothing_factor / num_classes,
+                               device=device)
     smooth_labels.scatter_(1, labels.unsqueeze(1), 1 - smoothing_factor + smoothing_factor / num_classes)
     return smooth_labels
 
-for epoch in range(175):  # increase to 50 epochs
-    model.train()
+
+for epoch in range(175):  # Train for 175 epochs
+    model.train()  # Put model in training mode
     train_loss = 0
     for images, labels in train_loader:
-        images, labels = images.to(device), labels.to(device)
+        images, labels = images.to(device), labels.to(device)  # Send everything to gpu
         labels = smooth_labels(labels, num_classes=102, device=device)  # Apply label smoothing
-        optimizer.zero_grad()
+        optimizer.zero_grad()  # Set gradient to 0 before processing anything
         outputs = model(images)
         loss = criterion(outputs, labels)
         loss.backward()
@@ -271,7 +273,7 @@ for epoch in range(175):  # increase to 50 epochs
 
     val_loss = 0
     val_accuracy = 0
-    model.eval()
+    model.eval()  # Put model in evaluation mode to test val loss and accuracy.
     with torch.no_grad():
         for images, labels in val_loader:
             images, labels = images.to(device), labels.to(device)
@@ -284,18 +286,19 @@ for epoch in range(175):  # increase to 50 epochs
     val_accuracy /= len(val_loader.dataset)
     scheduler.step(val_loss)  # Scheduler steps based on validation loss
 
-    print(f'Epoch {epoch + 1}, Training Loss: {train_loss / len(train_loader.dataset):.5f}, Validation Loss: {val_loss:.5f}, Validation Accuracy: {val_accuracy:.2f}')
+    print(
+        f'Epoch {epoch + 1}, Training Loss: {train_loss / len(train_loader.dataset):.5f}, Validation Loss: {val_loss:.5f}, Validation Accuracy: {val_accuracy:.2f}')
 
-    if val_loss < best_val_loss:
+    # Early stopping helps prevent overfitting by stopping the model if val loss stops improving.
+    if val_loss < best_val_loss:  # Compare current models val loss to best one
         best_val_loss = val_loss
         best_model_state = model.state_dict()  # Save the best model's state dictionary
         counter = 0
     else:
         counter += 1
         if counter >= 20:
-            print(f"Early stopping at epoch {epoch+1}")
+            print(f"Early stopping at epoch {epoch + 1}")
             break
-
 
 model.load_state_dict(best_model_state)
 
