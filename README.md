@@ -12,8 +12,9 @@ This project implements a convolutional neural network (CNN) for classifying ima
 ## Installation
 
 1. Clone the repository:
+
    ```
-   https://github.com/Capataina/PyTorchImageClassification.git
+   Hidden for submission anonymity
    ```
 
 2. Install the required packages:
@@ -24,6 +25,7 @@ This project implements a convolutional neural network (CNN) for classifying ima
 ## Usage
 
 1. Run the script:
+
    ```
    python flower_classifier.py
    ```
@@ -57,7 +59,7 @@ The Oxford Flowers-102 dataset is used for training and evaluation. It consists 
 
 ## Results
 
-The highest accuracy achieved by the model is 72% and the average accuracy is around 71% after training.
+The highest accuracy achieved by the model is 72% and the average accuracy is around 70% after training.
 
 ## License
 
